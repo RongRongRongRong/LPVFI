@@ -75,7 +75,7 @@ def random_reverse_time(img0, imgt, img1, flow, p=0.5):
 class Vimeo90K_Train_Dataset(Dataset):
     def __init__(self, 
                  dataset_dir='../../IFRNet-main/data/vimeo_triplet',
-                 flow_dir=None, 
+                 flow_path='',
                  augment=True, 
                  crop_size=(224, 224)):
         self.dataset_dir = dataset_dir
@@ -86,8 +86,6 @@ class Vimeo90K_Train_Dataset(Dataset):
         self.img1_list = []
         self.flow_t0_list = []
         self.flow_t1_list = []
-        if flow_dir is None:
-            flow_dir = 'flow'
         with open(os.path.join(self.dataset_dir, 'tri_trainlist.txt'), 'r') as f:
             for i in f:
                 name = str(i).strip()
@@ -96,8 +94,8 @@ class Vimeo90K_Train_Dataset(Dataset):
                 self.img0_list.append(os.path.join(dataset_dir, 'sequences', name, 'im1.png'))
                 self.imgt_list.append(os.path.join(dataset_dir, 'sequences', name, 'im2.png'))
                 self.img1_list.append(os.path.join(dataset_dir, 'sequences', name, 'im3.png'))
-                self.flow_t0_list.append(os.path.join('/root/autodl-tmp/IFR/data_flow/Vimeo90k/flow_Vimeo', name, 'flow_t0.flo'))
-                self.flow_t1_list.append(os.path.join('/root/autodl-tmp/IFR/data_flow/Vimeo90k/flow_Vimeo', name, 'flow_t1.flo'))
+                self.flow_t0_list.append(os.path.join(flow_path, name, 'flow_t0.flo'))
+                self.flow_t1_list.append(os.path.join(flow_path, name, 'flow_t1.flo'))
 
     def __len__(self):
         return len(self.imgt_list)

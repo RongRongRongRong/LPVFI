@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import math
 from networks.blocks.raft import (
     coords_grid,
     SmallUpdateBlock, BidirCorrBlock
@@ -468,15 +469,6 @@ class Model(nn.Module):
         conv_mask_noise = (F.avg_pool2d(conv_mask, kernel_size=57, stride=1, padding=28) > 0.3).float()
         conv_mask = conv_mask_noise * conv_mask
         conv_mask = F.max_pool2d(conv_mask, 3, 1, 1)
-        '''
-        tempflow = F.interpolate(torch.cat([up_flow0_2,up_flow1_2],dim=1),scale_factor=2,mode='bilinear')
-        conv_mask = 1 - ((torch.abs(tempflow[:, 0:1]) < self.conv_thres / 2) & (
-                torch.abs(tempflow[:, 1:2]) < self.conv_thres / 2) & (torch.abs(tempflow[:, 2:3]) < self.conv_thres / 2)
-                     & (torch.abs(tempflow[:, 3:4]) < self.conv_thres / 2)).float()
-        conv_mask_noise = (F.avg_pool2d(conv_mask, kernel_size=15, stride=1, padding=7) > 0.3).float()
-        conv_mask = conv_mask_noise * conv_mask
-        conv_mask = F.max_pool2d(conv_mask, 3, 1, 1)
-         '''
         loss_l1flow += F.l1_loss(torch.cat([(delta_flow0_2+odflow0), (delta_flow1_2+odflow1)],dim=1), torch.zeros(torch.cat([up_flow0_2, up_flow1_2],dim=1).shape, device='cuda')) * self.l1flow_weight
 
 
@@ -512,7 +504,7 @@ class Model(nn.Module):
             }
 
 
-    def get_dynamic_macs(self, img0, img1, embt, scale_factor=1.0):
+    def get_dynamic_macs(self, img0, img1, embt, scale_factor=1.0, thres=15):
         mean_ = torch.cat([img0, img1], 2).mean(1, keepdim=True).mean(2, keepdim=True).mean(3, keepdim=True)
         img0 = img0 - mean_
         img1 = img1 - mean_
@@ -528,7 +520,7 @@ class Model(nn.Module):
         f1_1, f1_2, f1_3, f1_4 = self.encoder(img1_)
         H, W = img0_.shape[2], img0_.shape[3]
         conv_masks = []
-        conv_thres = 0.0
+
         ######################################### the 4th decoder #########################################
         up_flow0_4, up_flow1_4, ft_3_ = self.decoder4(f0_4, f1_4, embt)
         corr_4, flow_4 = self._corr_scale_lookup(corr_fn, coord,
@@ -543,10 +535,12 @@ class Model(nn.Module):
         ft_3_ = ft_3_ + delta_ft_3_
         up_mask_4 = ft_3_[:, :1]
 
-        conv_mask = ((torch.abs(up_flow0_4[:, 0:1]) < conv_thres / 8) & (
-                torch.abs(up_flow0_4[:, 1:2]) < conv_thres / 8) & (
-                                 torch.abs(up_flow1_4[:, 0:1]) < conv_thres / 8)
-                     & (torch.abs(up_flow1_4[:, 1:2]) < conv_thres / 8)).float()
+        conv_thres = F.adaptive_max_pool2d(torch.abs(torch.cat([up_flow0_4, up_flow1_4], dim=1)),
+                                           (1, 1)) / thres
+        conv_mask = ((torch.abs(up_flow0_4[:, 0:1]) < conv_thres[:, 0:1] / 8) & (
+                torch.abs(up_flow0_4[:, 1:2]) < conv_thres[:, 1:2] / 8) & (
+                                 torch.abs(up_flow1_4[:, 0:1]) < conv_thres[:, 2:3] / 8)
+                     & (torch.abs(up_flow1_4[:, 1:2]) < conv_thres[:, 3:4] / 8)).float()
         conv_mask = 1 - F.interpolate(conv_mask, scale_factor=2)
 
         # conv_mask_noise = (F.avg_pool2d(conv_mask,kernel_size=11,stride=1,padding=5)>0.2).float()
@@ -565,16 +559,19 @@ class Model(nn.Module):
         # residue update with lookup corr
         delta_ft_2_, delta_flow_3 = self.update3(ft_2_, flow_3, corr_3)
         delta_flow0_3, delta_flow1_3 = torch.chunk(delta_flow_3, 2, 1)
-        up_flow0_3 = up_flow0_3 + delta_flow0_3 * conv_mask
-        up_flow1_3 = up_flow1_3 + delta_flow1_3 * conv_mask
-        ft_2_ = ft_2_ + delta_ft_2_ * conv_mask
+        up_flow0_3 = up_flow0_3 + delta_flow0_3
+        up_flow1_3 = up_flow1_3 + delta_flow1_3
+        ft_2_ = ft_2_ + delta_ft_2_
         up_mask_3 = ft_2_[:, :1] + F.interpolate(up_mask_4, scale_factor=2, mode='nearest')
 
-        conv_mask = ((torch.abs((dflow0 + delta_flow0_3)[:, 0:1] * conv_mask) < conv_thres / 4) & (
-                torch.abs((dflow0 + delta_flow0_3))[:, 1:2] * conv_mask < conv_thres / 4) & (
-                                 torch.abs((dflow1 + delta_flow1_3)[:, 0:1] * conv_mask) < conv_thres / 4)
-                     & (torch.abs((dflow1 + delta_flow1_3)[:, 1:2] * conv_mask) < conv_thres / 4)).float()
+        conv_thres = F.adaptive_max_pool2d(
+            torch.abs(torch.cat([dflow0 + delta_flow0_3, dflow1 + delta_flow1_3], dim=1)), (1, 1)) / thres
+        conv_mask = ((torch.abs((dflow0 + delta_flow0_3)[:, 0:1] * conv_mask) < conv_thres[:, 0:1] / 4) & (
+                torch.abs((dflow0 + delta_flow0_3))[:, 1:2] * conv_mask < conv_thres[:, 1:2] / 4) & (
+                                 torch.abs((dflow1 + delta_flow1_3)[:, 0:1] * conv_mask) < conv_thres[:, 2:3] / 4)
+                     & (torch.abs((dflow1 + delta_flow1_3)[:, 1:2] * conv_mask) < conv_thres[:, 3:4] / 4)).float()
         conv_mask = 1 - F.interpolate(conv_mask, scale_factor=2)
+        # conv_mask_noise = (F.avg_pool2d(conv_mask,kernel_size=11,stride=1,padding=5)>0.2).float()
         conv_mask_noise = (F.avg_pool2d(conv_mask, kernel_size=29, stride=1, padding=14) > 0.3).float()
         conv_mask = conv_mask_noise * conv_mask
         conv_mask = F.max_pool2d(conv_mask, 3, 1, 1)
@@ -590,15 +587,18 @@ class Model(nn.Module):
         # residue update with lookup corr
         delta_ft_1_, delta_flow_2 = self.update2(ft_1_, flow_2, corr_2)
         delta_flow0_2, delta_flow1_2 = torch.chunk(delta_flow_2, 2, 1)
-        up_flow0_2 = up_flow0_2 + delta_flow0_2 * conv_mask
-        up_flow1_2 = up_flow1_2 + delta_flow1_2 * conv_mask
-        ft_1_ = ft_1_ + delta_ft_1_ * conv_mask
+        up_flow0_2 = up_flow0_2 + delta_flow0_2
+        up_flow1_2 = up_flow1_2 + delta_flow1_2
+        ft_1_ = ft_1_ + delta_ft_1_
         up_mask_2 = ft_1_[:, :1] + F.interpolate(up_mask_3, scale_factor=2, mode='nearest')
 
-        conv_mask = ((torch.abs((dflow0 + delta_flow0_2)[:, 0:1] * conv_mask) < conv_thres / 2) & (
-                torch.abs((dflow0 + delta_flow0_2)[:, 1:2] * conv_mask) < conv_thres / 2) & (
-                                 torch.abs((dflow1 + delta_flow1_2)[:, 0:1] * conv_mask) < conv_thres / 2)
-                     & (torch.abs((dflow0 + delta_flow1_2)[:, 1:2] * conv_mask) < conv_thres / 2)).float()
+        conv_thres = F.adaptive_max_pool2d(
+            torch.abs(torch.cat([dflow0 + delta_flow0_2, dflow1 + delta_flow1_2], dim=1)),
+            (1, 1)) / thres * 0.5
+        conv_mask = ((torch.abs((dflow0 + delta_flow0_2)[:, 0:1]) < conv_thres[:, 0:1] / 2) & (
+                torch.abs((dflow0 + delta_flow0_2)[:, 1:2]) < conv_thres[:, 1:2] / 2) & (
+                                 torch.abs((dflow1 + delta_flow1_2)[:, 0:1]) < conv_thres[:, 2:3] / 2)
+                     & (torch.abs((dflow0 + delta_flow1_2)[:, 1:2]) < conv_thres[:, 3:4] / 2)).float()
         conv_mask = 1 - F.interpolate(conv_mask, scale_factor=2)
         conv_mask_noise = (F.avg_pool2d(conv_mask, kernel_size=57, stride=1, padding=28) > 0.3).float()
         conv_mask = conv_mask_noise * conv_mask
@@ -609,7 +609,6 @@ class Model(nn.Module):
         up_flow0_1, up_flow1_1, mask, img_res, dflow0, dflow1, odflow0, odflow1 = self.decoder1(ft_1_, f0_1, f1_1,
                                                                                                 up_flow0_2, up_flow1_2,
                                                                                                 conv_mask)
-
         mask = mask + F.interpolate(up_mask_2, scale_factor=2, mode='nearest')
         mask = torch.sigmoid(mask)
         if scale_factor != 1.0:
@@ -622,7 +621,6 @@ class Model(nn.Module):
         imgt_pred = multi_flow_combine(self.comb_block, img0, img1, up_flow0_1, up_flow1_1,
                                        mask, img_res, mean_)
         imgt_pred = torch.clamp(imgt_pred, 0, 1)
-
 
         #CorrBlock
         F_corr = self.feat_enc_outc*H*W*H*W/8/8/8/8 * 1e-9

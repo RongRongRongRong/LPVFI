@@ -22,10 +22,12 @@ data:
     name: datasets.vimeo_datasets.Vimeo90K_Train_Dataset
     params:
       dataset_dir: /root/autodl-tmp/IFR/data/Vimeo90k
+      flow_path: None
   val:
     name: datasets.vimeo_datasets.Vimeo90K_Test_Dataset
     params:
       dataset_dir: /root/autodl-tmp/IFR/data/Vimeo90k
+      flow_path: None
   train_loader:
     batch_size: 24
     num_workers: 8
