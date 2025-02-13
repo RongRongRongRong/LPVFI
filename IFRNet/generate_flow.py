@@ -1,14 +1,9 @@
 import os
-<<<<<<< HEAD
-
 import cv2
-=======
->>>>>>> b117bcafcf074b2de756b882f8a6ca02c3169bfe
 import numpy as np
 import torch
 import torch.nn.functional as F
 from liteflownet.run import estimate
-<<<<<<< HEAD
 from utils_ import read, write
 
 
@@ -17,7 +12,6 @@ vimeo90k_dir = './data/Vimeo90k'
 save_dir = 'data_flow/Vimeo90k'
 vimeo90k_sequences_dir = os.path.join(vimeo90k_dir, 'sequences')
 vimeo90k_flow_dir = os.path.join(save_dir, 'flow_Vimeo')
-=======
 from utils import read, write
 
 
@@ -26,7 +20,6 @@ vimeo90k_dir = '/home/ltkong/Datasets/Vimeo90K/vimeo_triplet'
 
 vimeo90k_sequences_dir = os.path.join(vimeo90k_dir, 'sequences')
 vimeo90k_flow_dir = os.path.join(vimeo90k_dir, 'flow')
->>>>>>> b117bcafcf074b2de756b882f8a6ca02c3169bfe
 
 if not os.path.exists(vimeo90k_flow_dir):
     os.makedirs(vimeo90k_flow_dir)

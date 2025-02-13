@@ -20,11 +20,8 @@ assert(int(str('').join(torch.__version__.split('.')[0:2])) >= 13) # requires at
 
 torch.set_grad_enabled(False) # make sure to not compute gradients for computational performance
 
-<<<<<<< HEAD
 torch.backends.cudnn.enabled = False # make sure to use cudnn for computational performance
-=======
 torch.backends.cudnn.enabled = True # make sure to use cudnn for computational performance
->>>>>>> b117bcafcf074b2de756b882f8a6ca02c3169bfe
 
 ##########################################################
 
