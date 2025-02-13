@@ -15,8 +15,10 @@ from skimage.color import rgb2yuv, yuv2rgb
 from yuv_frame_io import YUV_Read
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+thres = 15
+weights_path = '../weights/Snorm.pth'
 model = Model()
-model.load_state_dict(torch.load('../weights/Snorm.pth'))
+model.load_state_dict(torch.load(weights_path))
 model.eval()
 model.cuda()
 
@@ -36,7 +38,6 @@ name_list = [
 
 tot = 0.
 F_sum = 0
-sizes = []
 for data in name_list:
     psnr_list = []
     name = data[0]
@@ -47,8 +48,6 @@ for data in name_list:
     else:
         Reader = cv2.VideoCapture(name)
     _, lastframe = Reader.read()
-    # fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-    # video = cv2.VideoWriter(name + '.mp4', fourcc, 30, (w, h))
     for index in range(0, 100, 2):
         if 'yuv' in name:
             IMAGE1, success1 = Reader.read(index)
@@ -66,11 +65,6 @@ for data in name_list:
                 break
         I0 = torch.from_numpy(np.transpose(IMAGE1, (2,0,1)).astype("float32") / 255.).cuda().unsqueeze(0)
         I1 = torch.from_numpy(np.transpose(IMAGE2, (2,0,1)).astype("float32") / 255.).cuda().unsqueeze(0)
-        if not os.path.exists('../save_my/'+str(index)+'/'):
-            mkdir('../save_my/'+str(index)+'/')
-        cv2.imwrite('../save_my/'+str(index)+'/'+'im1.png',I0[0].permute(1,2,0).cpu().detach().numpy()*255)
-        cv2.imwrite('../save_my/' + str(index) + '/' + 'im2.png',I1[0].permute(1,2,0).cpu().detach().numpy()*255)
-
         embt = torch.tensor(1 / 2).float().view(1, 1, 1, 1).to(device)
         if h == 720:
             pad = 24
@@ -81,9 +75,8 @@ for data in name_list:
         pader = torch.nn.ReplicationPad2d([0, 0, pad, pad])
         I0 = pader(I0)
         I1 = pader(I1)
-        sizes.append(I0.shape)
         with torch.no_grad():
-            FModel, pred, mask_ratio, _, _, conv_mask = model.get_dynamic_MACs(I0, None, I1, embt)
+            FModel, pred, mask_ratio, _, _, _ = model.get_dynamic_MACs(I0, None, I1, embt, thres=thres)
             F_sum += FModel
             pred = pred[:, :, pad: -pad]
 
@@ -98,7 +91,6 @@ for data in name_list:
         psnr_list.append(psnr)
     print(np.mean(psnr_list))
     tot += np.mean(psnr_list)
-print('avg psnr', tot / len(name_list))
-print(F_sum/len(sizes))
-elem_counter = Counter(sizes)
-print(elem_counter)
+
+print('avg psnr: ', tot / len(name_list))
+print('GMACs: ', F_sum/len(sizes))

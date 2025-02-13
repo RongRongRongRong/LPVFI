@@ -43,7 +43,6 @@ def val(args, model):
 def evaluate(args, model, dataloader_val, logger):
     psnr_list = []
     ssim_list = []
-    mask_ratios = [[],[],[]]
     model.eval()
     progress_bar = tqdm.tqdm(enumerate(dataloader_val), total=len(dataloader_val))
     Fmodel_sum = 0
@@ -52,31 +51,27 @@ def evaluate(args, model, dataloader_val, logger):
             data[l] = data[l].to(args.device)
         img0, imgt, img1, _, embt = data
         with torch.no_grad():
-            Fmodel, imgt_pred, mask_ratio, flow0, flow1, conv_mask = model.get_dynamic_MACs(img0, imgt, img1, embt, scale_factor=1.0)
+            Fmodel, imgt_pred, mask_ratio, flow0, flow1, conv_mask = model.get_dynamic_MACs(img0, imgt, img1, embt, scale_factor=1.0, thres=args.thres)
             Fmodel_sum += Fmodel
-            mask_ratios[0].extend(mask_ratio[0])
-            mask_ratios[1].extend(mask_ratio[1])
-            mask_ratios[2].extend(mask_ratio[2])
         for j in range(img0.shape[0]):
             psnr = calculate_psnr(imgt_pred[j].unsqueeze(0), imgt[j].unsqueeze(0)).cpu().data
             ssim = calculate_ssim(imgt_pred[j].unsqueeze(0), imgt[j].unsqueeze(0)).cpu().data
             psnr_list.append(psnr)
             ssim_list.append(ssim)
-    print(Fmodel_sum/len(progress_bar))
-
+    print('GMACs:.1f'.format(Fmodel_sum/len(progress_bar)))
     logger.info(
-        'eval psnr:{:.2f} ssim:{:.3f} ratio4:{:.4f} ratio3:{:.4f} ratio2:{:.4f}'.format(np.array(psnr_list).mean(), np.array(ssim_list).mean(),
-                            np.array(mask_ratios[0]).mean(), np.array(mask_ratios[1]).mean(), np.array(mask_ratios[2]).mean()))
+        'eval psnr:{:.2f} ssim:{:.3f}'.format(np.array(psnr_list).mean(), np.array(ssim_list).mean()))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='IFRNet')
     parser.add_argument('--model_name', default='My', type=str, help='My, IFRNet_S')
     parser.add_argument('--local_rank', default=-1, type=int)
-    parser.add_argument('--batch_size', default=1, type=int)
+    parser.add_argument('--batch_size', default=32, type=int)
     parser.add_argument('--log_path', default='./expirements/test_mask', type=str)
-    parser.add_argument('--resume_path', default='./weights/Snorm.pth', type=str)
+    parser.add_argument('--resume_path', default='./weights/', type=str)
     parser.add_argument('--dataset', default='Vimeo90k', type=str, help='Vimeo90k, UCF')
+    parser.add_argument('--thres', default=15, type=int)
     args = parser.parse_args()
     torch.cuda.set_device(args.local_rank)
     args.device = torch.device('cuda')

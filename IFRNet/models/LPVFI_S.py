@@ -528,7 +528,7 @@ class Model(nn.Module):
         return imgt_pred, loss_rec, loss_geo, loss_rflow, loss_sflow, loss_l1flow, loss_dis, loss_dft, loss_dflow
 
 
-    def get_dynamic_MACs(self, img0, imgt, img1, embt, scale_factor=1.0):
+    def get_dynamic_MACs(self, img0, imgt, img1, embt, scale_factor=1.0, thres=15):
         conv_masks = []
         #get masks
         mean_ = torch.cat([img0, img1], 2).mean(1, keepdim=True).mean(2, keepdim=True).mean(3, keepdim=True)
@@ -548,7 +548,7 @@ class Model(nn.Module):
         up_mask_4 = out4[:, 4:5]
         ft_d_ = out4[:, 4:]
 
-        thres_scale = 6
+        thres_scale = thres
         conv_thres = F.adaptive_max_pool2d(torch.abs(out4[:, 0:4]),(1,1))/thres_scale
         conv_mask = ((torch.abs(out4[:, 0:1]) < conv_thres[:, 0:1] / 8) & (
                 torch.abs(out4[:, 1:2]) < conv_thres[:, 1:2] / 8) & (torch.abs(out4[:, 2:3]) < conv_thres[:, 2:3] / 8)
