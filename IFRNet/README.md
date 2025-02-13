@@ -16,5 +16,5 @@ Run train_vimeo90k.py.
 Train LPVFI from scratch or download the pretrained model in this [link]()  
 
 ### test Vimeo90k dataset
-run test_MACs.py with 'python test_MACs.py --dataset Vimeo90k'
+run test_MACs.py with `python test_MACs.py --dataset Vimeo90k`
 
