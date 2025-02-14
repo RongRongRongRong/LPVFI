@@ -11,7 +11,7 @@ Download [Vimeo90k triplet dataset](http://toflow.csail.mit.edu/index.html#tripl
 Generate optical flow pseudo label to distill the model with `python generate_flow.py -r 'path/data/vimeo_triplet'`
 
 ### Train LPVFI-AMT
-1.Change the 'dataset_dir' and 'flow_path' in LPVFI-AMT-S.yaml  
+1.Change the 'dataset_dir' in './cfgs/LPVFI-AMT-S.yaml' with Vimeo90k path, and change 'flow_path' in './cfgs/LPVFI-AMT-S.yaml' with directory path of generated flow.  
 2.Run train.py.
 
 ## Test
