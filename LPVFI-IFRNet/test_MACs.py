@@ -32,10 +32,10 @@ def val(args, model):
     logger.addHandler(fhlr)
     logger.info(args)
     if args.dataset == 'Vimeo90k':
-        dataset_val = Vimeo90K_Test_Dataset()
+        dataset_val = Vimeo90K_Test_Dataset(args.root)
         dataloader_val = DataLoader(dataset_val, batch_size=args.batch_size, num_workers=8, shuffle=False, drop_last=False)
     elif args.dataset == 'UCF':
-        dataset_val = UCF_Test_Dataset()
+        dataset_val = UCF_Test_Dataset(args.root)
         dataloader_val = DataLoader(dataset_val, batch_size=args.batch_size, num_workers=8, shuffle=False, drop_last=False)
     evaluate(args, model,dataloader_val, logger)
 
@@ -69,8 +69,9 @@ if __name__ == '__main__':
     parser.add_argument('--local_rank', default=-1, type=int)
     parser.add_argument('--batch_size', default=32, type=int)
     parser.add_argument('--log_path', default='./expirements/test_mask', type=str)
-    parser.add_argument('--resume_path', default='./weights/', type=str)
+    parser.add_argument('--ckpt', default='./weights/LPVFI-IFRNet.pth', type=str)
     parser.add_argument('--dataset', default='Vimeo90k', type=str, help='Vimeo90k, UCF')
+    parser.add_argument('--root', default='/home/luolab/xzh/IFRNet-main/data/SNU-FILM')
     parser.add_argument('--thres', default=15, type=int)
     args = parser.parse_args()
     torch.cuda.set_device(args.local_rank)
@@ -82,5 +83,5 @@ if __name__ == '__main__':
         from models.IFRNet_S import Model
         args.log_path = args.log_path + '/' + 'baseline_' + args.dataset
     model = Model().to(args.device)
-    model.load_state_dict(torch.load(args.resume_path, map_location='cpu'))
+    model.load_state_dict(torch.load(args.ckpt, map_location='cpu'))
     val(args, model)

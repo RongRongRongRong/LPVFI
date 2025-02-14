@@ -1,6 +1,7 @@
 import os
 import sys
 import tqdm
+import argparse
 sys.path.append('.')
 import torch
 import torch.nn.functional as F
@@ -9,16 +10,22 @@ from utils import read
 from metric import calculate_psnr, calculate_ssim
 from models.LPVFI_S import Model
 
-# Replace the 'path' with your SNU-FILM dataset absolute path.
-path = 'xxx/LPVFI/IFRNet/data/SNU-FILM/'
-prefix_path = 'xxx/LPVFI/IFRNet'
-test_files = ["test-easy.txt","test-medium.txt","test-hard.txt","test-extreme.txt"]
-weights_path = '../weights/newS.pth'
-thres = 15
+parser = argparse.ArgumentParser(
+                prog = 'LPVFI-IFRNet',
+                description = 'SNU-FILM evaluation',
+                )
+parser.add_argument('-p', '--ckpt', default='./weights/LPVFI-IFRNet.pth')
+parser.add_argument('-r', '--root', default='/home/luolab/xzh/IFRNet-main/data/SNU-FILM')
+parser.add_argument('--thres', default=15, type=int)
+args = parser.parse_args()
 
+# Replace the 'path' with your SNU-FILM dataset absolute path.
+path = args.root
+test_files = ["test-easy.txt","test-medium.txt","test-hard.txt","test-extreme.txt"]
+thres = args.thres
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = Model()
-model.load_state_dict(torch.load(weights_path))
+model.load_state_dict(torch.load(args.ckpt))
 model.eval()
 model.cuda()
 
@@ -54,9 +61,9 @@ for j in range(4):
     F_sum = 0
     for line in file_list:
         #print(os.path.join(prefix_path, line[0]))
-        I0_path = os.path.join(prefix_path, line[0])
-        I1_path = os.path.join(prefix_path, line[1])
-        I2_path = os.path.join(prefix_path, line[2])
+        I0_path = os.path.join(args.root, '../..', line[0])
+        I1_path = os.path.join(args.root, '../..', line[1])
+        I2_path = os.path.join(args.root, '../..', line[2])
         I0 = read(I0_path)
         I1 = read(I1_path)
         I2 = read(I2_path)

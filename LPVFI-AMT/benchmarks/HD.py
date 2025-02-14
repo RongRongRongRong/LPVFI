@@ -25,11 +25,12 @@ from utils.build_utils import build_from_cfg
 from metrics.psnr_ssim import calculate_psnr, calculate_ssim
 
 parser = argparse.ArgumentParser(
-                prog = 'AMT',
-                description = 'Vimeo90K evaluation',
+                prog = 'LPVFI-AMT',
+                description = 'HD evaluation',
                 )
-parser.add_argument('-c', '--config', default='../cfgs/LPVFI-AMT-S.yaml')
-parser.add_argument('-p', '--ckpt', default='../weights/.pth')
+parser.add_argument('-c', '--config', default='./cfgs/LPVFI-AMT-S.yaml')
+parser.add_argument('-p', '--ckpt', default='./weights/LPVFI-AMT.pth')
+parser.add_argument('-r', '--root', default='/home/luolab/xzh/IFRNet-main/data/HD_dataset')
 parser.add_argument('--thres', default=15, type=int)
 args = parser.parse_args()
 
@@ -46,17 +47,17 @@ model.load_state_dict(ckpt['state_dict'])
 model = model.to(device)
 model.eval()
 name_list = [
-    #('/home/luolab/xzh/IFRNet-main/data/HD_dataset/HD720p_GT/parkrun_1280x720_50.yuv', 720, 1280),
-    #('/home/luolab/xzh/IFRNet-main/data/HD_dataset/HD720p_GT/shields_1280x720_60.yuv', 720, 1280),
-    #('/home/luolab/xzh/IFRNet-main/data/HD_dataset/HD720p_GT/stockholm_1280x720_60.yuv', 720, 1280),
-    #('/home/luolab/xzh/IFRNet-main/data/HD_dataset/HD1080p_GT/BlueSky.yuv', 1080, 1920),
-    #('/home/luolab/xzh/IFRNet-main/data/HD_dataset/HD1080p_GT/Kimono1_1920x1080_24.yuv', 1080, 1920),
-    #('/home/luolab/xzh/IFRNet-main/data/HD_dataset/HD1080p_GT/ParkScene_1920x1080_24.yuv', 1080, 1920),
-    #('/home/luolab/xzh/IFRNet-main/data/HD_dataset/HD1080p_GT/sunflower_1080p25.yuv', 1080, 1920),
-    ('/home/luolab/xzh/IFRNet-main/data/HD_dataset/HD544p_GT/Sintel_Alley2_1280x544.yuv', 544, 1280),
-    ('/home/luolab/xzh/IFRNet-main/data/HD_dataset/HD544p_GT/Sintel_Market5_1280x544.yuv', 544, 1280),
-    ('/home/luolab/xzh/IFRNet-main/data/HD_dataset/HD544p_GT/Sintel_Temple1_1280x544.yuv', 544, 1280),
-    ('/home/luolab/xzh/IFRNet-main/data/HD_dataset/HD544p_GT/Sintel_Temple2_1280x544.yuv', 544, 1280),
+    #(args.root+'/HD720p_GT/parkrun_1280x720_50.yuv', 720, 1280),
+    #(args.root+'/HD720p_GT/shields_1280x720_60.yuv', 720, 1280),
+    #(args.root+'/HD720p_GT/stockholm_1280x720_60.yuv', 720, 1280),
+    #(args.root+'/HD1080p_GT/BlueSky.yuv', 1080, 1920),
+    #(args.root+'/HD1080p_GT/Kimono1_1920x1080_24.yuv', 1080, 1920),
+    #(args.root+'/HD1080p_GT/ParkScene_1920x1080_24.yuv', 1080, 1920),
+    #(args.root+'/HD1080p_GT/sunflower_1080p25.yuv', 1080, 1920),
+    (args.root+'/HD544p_GT/Sintel_Alley2_1280x544.yuv', 544, 1280),
+    (args.root+'/HD544p_GT/Sintel_Market5_1280x544.yuv', 544, 1280),
+    (args.root+'/HD544p_GT/Sintel_Temple1_1280x544.yuv', 544, 1280),
+    (args.root+'/HD544p_GT/Sintel_Temple2_1280x544.yuv', 544, 1280),
 ]
 tot = 0.
 F_sum = 0

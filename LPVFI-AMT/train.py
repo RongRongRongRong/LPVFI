@@ -11,10 +11,9 @@ from utils.dist_utils import (
 from omegaconf import OmegaConf
 from utils.utils import seed_all
 parser = argparse.ArgumentParser(description='VFI')
-parser.add_argument('-c', '--config', default='./cfgs/AMT-L.yaml', type=str)
+parser.add_argument('-c', '--config', default='./cfgs/LPVFI-AMT-S.yaml', type=str)
 parser.add_argument('-p', '--port', default='23455', type=str)
 parser.add_argument('--local_rank', default='0')
-parser.add_argument('-r', default='./data/') #dataset path
 
 args = parser.parse_args()
 

@@ -16,12 +16,17 @@ Generate optical flow pseudo label to distill the model with `python generate_fl
 Run train_vimeo90k.py.
 
 ## Test
-1. Train LPVFI from scratch or download the pretrained model in this [link]().
+1. Train LPVFI from scratch or use the pretrained model in './weights/LPVFI-IFRNet.pth'.
 2. To test frame interpolation accuracy on Vimeo90K, UCF101, SNU-FILM and HD datasets, you can run:
 ```python
-python test_MACs.py --dataset Vimeo90k --thres 15  
-python test_MACs.py --dataset UCF --thres 15  
-python benchmarks/SNU_FILM.py 
-python benchmarks/HD.py 
+python test_MACs.py --dataset Vimeo90k --root 'data_path' --thres 15 --ckpt 'model_path'
+python test_MACs.py --dataset UCF --root 'data_path' --thres 15 --ckpt 'model_path'
+python benchmarks/SNU_FILM.py --thres 15 --root 'data_path' --ckpt 'model_path'
+python benchmarks/HD.py --thres 15 --root 'data_path' --ckpt 'model_path'
 ```  
 
+
+
+
+## To Do
+Upload code about latency test on NVIDIA's CUTLASS Operator

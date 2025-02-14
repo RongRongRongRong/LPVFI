@@ -76,7 +76,7 @@ def random_reverse_time(img0, imgt, img1, flow, p=0.5):
 
 
 class Vimeo90K_Train_Dataset(Dataset):
-    def __init__(self, dataset_dir='/home/ltkong/Datasets/Vimeo90K/vimeo_triplet', augment=True):
+    def __init__(self, dataset_dir='./data/Vimeo90K/', augment=True):
         self.dataset_dir = dataset_dir
         self.augment = augment
         self.img0_list = []
@@ -125,7 +125,7 @@ class Vimeo90K_Train_Dataset(Dataset):
 
 
 class Vimeo90K_Test_Dataset(Dataset):
-    def __init__(self, dataset_dir='/home/ltkong/Datasets/Vimeo90K/vimeo_triplet'):
+    def __init__(self, dataset_dir='./data/Vimeo90K/'):
         self.dataset_dir = dataset_dir
         self.img0_list = []
         self.imgt_list = []
@@ -161,6 +161,19 @@ class Vimeo90K_Test_Dataset(Dataset):
         embt = torch.from_numpy(np.array(1/2).reshape(1, 1, 1).astype(np.float32))
         
         return img0, imgt, img1, flow, embt
+
+
+
+class UCF_Test_Dataset(Dataset):
+    def __init__(self, dataset_dir='./data/ucf101'):
+        self.dataset_dir = dataset_dir
+        self.trip_list = []
+        files = sorted(os.listdir(self.dataset_dir))
+        for file in files:
+            self.trip_list.append(os.path.join(self.dataset_dir, file))
+
+    def __len__(self):
+        return len(self.trip_list)
 
 
 

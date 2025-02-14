@@ -19,11 +19,11 @@ def parse_path(path):
     return new_path
 
 parser = argparse.ArgumentParser(
-                prog = 'AMT',
+                prog = 'LPVFI-AMT',
                 description = 'SNU-FILM evaluation',
                 )
-parser.add_argument('-c', '--config', default='../cfgs/LPVFI-AMT-S.yaml')
-parser.add_argument('-p', '--ckpt', default='../weights/',)
+parser.add_argument('-c', '--config', default='./cfgs/LPVFI-AMT-S.yaml')
+parser.add_argument('-p', '--ckpt', default='./weights/LPVFI-AMT.pth',)
 parser.add_argument('-r', '--root', default='/home/luolab/xzh/IFRNet-main/data/SNU-FILM')
 parser.add_argument('--thres', default=15, type=int)
 args = parser.parse_args()
